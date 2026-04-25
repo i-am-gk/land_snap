@@ -8,30 +8,32 @@ The system allows administrators to manage land polygons while users can explore
 
 ## Features
 
-• Firebase Authentication (Login / Signup)  
-• Role-based access control (Admin / User)  
-• Interactive map visualization using Flutter Map  
-• Land parcel polygon rendering  
-• Real-time data from Firestore  
-• Admin land management system  
-• Polygon editing and viewing tools  
+- Firebase Authentication (Login / Signup)  
+- Role-based access control (Admin / User)  
+- Interactive map visualization using Flutter Map  
+- Land parcel polygon rendering  
+- Real-time data from Firestore  
+- Admin land management system  
+- Polygon editing and viewing tools  
 
 ---
 
 ## Technologies Used
 
-Flutter (Dart)
+### Flutter
+- Dart
+- Material UI
 
-Firebase
+### Firebase
 - Firebase Authentication
 - Cloud Firestore
 - Firebase Core
 
-Maps
+### Maps
 - flutter_map
 - OpenStreetMap tiles
 
-Other Packages
+### Other Packages
 - latlong2
 - flutter_map_animations
 - http
@@ -40,6 +42,7 @@ Other Packages
 
 ## Project Architecture
 
+```
 lib/
 │
 ├── auth/
@@ -68,30 +71,39 @@ lib/
 │   └── geojson_migrator.dart
 │
 └── main.dart
+```
 
 ---
 
 ## Setup Instructions
 
-1 Install Flutter
+### 1 Install Flutter
 
 https://flutter.dev/docs/get-started/install
 
-2 Clone the repository
+### 2 Clone the repository
 
-git clone https://github.com/YOUR_USERNAME/land_snap.git
+```
+git clone https://github.com/i-am-gk/land_snap.git
+```
 
-3 Navigate into project
+### 3 Navigate into project
 
+```
 cd land_snap
+```
 
-4 Install dependencies
+### 4 Install dependencies
 
+```
 flutter pub get
+```
 
-5 Run the application
+### 5 Run the application
 
+```
 flutter run
+```
 
 ---
 
@@ -101,8 +113,8 @@ The project uses Firebase for authentication and database services.
 
 You must configure:
 
-google-services.json for Android  
-GoogleService-Info.plist for iOS
+- `google-services.json` for Android  
+- `GoogleService-Info.plist` for iOS  
 
 These files are not included in the repository for security reasons.
 
@@ -116,5 +128,4 @@ This application was developed as part of a Final Year Project to demonstrate th
 
 ## Author
 
-Muhammad Ghani  
-BS Software Engineering
+GK
