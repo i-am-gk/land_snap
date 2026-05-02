@@ -17,16 +17,18 @@ class EditPolygonScreen extends StatefulWidget {
   State<EditPolygonScreen> createState() => _EditPolygonScreenState();
 }
 
-class _EditPolygonScreenState extends State<EditPolygonScreen> with TickerProviderStateMixin {
+class _EditPolygonScreenState extends State<EditPolygonScreen>
+    with TickerProviderStateMixin {
   late List<LatLng> _points;
   late final AnimatedMapController _animatedController;
   final TextEditingController _searchController = TextEditingController();
   final LandRepository _landRepo = LandRepository();
   final GlobalKey _mapKey = GlobalKey();
-  
+
   bool _isSaving = false;
   bool _isSatellite = true;
   bool _isEditing = false; // Added drawing mode state
+  bool _isMoveMode = false; // Added move mode state
   int? _draggedIndex;
   int? _selectedIndex;
   List<dynamic> _suggestions = [];
@@ -89,10 +91,12 @@ class _EditPolygonScreenState extends State<EditPolygonScreen> with TickerProvid
         return;
       }
 
-      final url = Uri.parse("https://nominatim.openstreetmap.org/search?q=${Uri.encodeComponent(query)}&format=json&limit=5");
-      
+      final url = Uri.parse(
+          "https://nominatim.openstreetmap.org/search?q=${Uri.encodeComponent(query)}&format=json&limit=5");
+
       try {
-        final response = await http.get(url, headers: {'User-Agent': 'LandSnap App'});
+        final response =
+            await http.get(url, headers: {'User-Agent': 'LandSnap App'});
         if (response.statusCode == 200) {
           final data = json.decode(response.body);
           if (mounted) {
@@ -109,18 +113,20 @@ class _EditPolygonScreenState extends State<EditPolygonScreen> with TickerProvid
 
   Future<void> _searchLocation(String query) async {
     if (query.isEmpty) return;
-    
-    final url = Uri.parse("https://nominatim.openstreetmap.org/search?q=${Uri.encodeComponent(query)}&format=json&limit=1");
-    
+
+    final url = Uri.parse(
+        "https://nominatim.openstreetmap.org/search?q=${Uri.encodeComponent(query)}&format=json&limit=1");
+
     try {
-      final response = await http.get(url, headers: {'User-Agent': 'LandSnap App'});
+      final response =
+          await http.get(url, headers: {'User-Agent': 'LandSnap App'});
       final data = json.decode(response.body);
-      
+
       if (data.isNotEmpty) {
         final lat = double.parse(data[0]['lat']);
         final lon = double.parse(data[0]['lon']);
         final target = LatLng(lat, lon);
-        
+
         _animatedController.animateTo(dest: target, zoom: 16);
         _searchController.clear();
         FocusScope.of(context).unfocus();
@@ -175,7 +181,18 @@ class _EditPolygonScreenState extends State<EditPolygonScreen> with TickerProvid
           IconButton(
             icon: Icon(_isEditing ? Icons.edit_off : Icons.edit),
             tooltip: _isEditing ? "Stop Drawing" : "Start Drawing",
-            onPressed: () => setState(() => _isEditing = !_isEditing),
+            onPressed: () => setState(() {
+              _isEditing = !_isEditing;
+              if (_isEditing) _isMoveMode = false;
+            }),
+          ),
+          IconButton(
+            icon: Icon(_isMoveMode ? Icons.pan_tool : Icons.pan_tool_outlined),
+            tooltip: _isMoveMode ? "Stop Moving" : "Start Moving",
+            onPressed: () => setState(() {
+              _isMoveMode = !_isMoveMode;
+              if (_isMoveMode) _isEditing = false;
+            }),
           ),
           IconButton(
             icon: const Icon(Icons.delete_sweep),
@@ -192,23 +209,25 @@ class _EditPolygonScreenState extends State<EditPolygonScreen> with TickerProvid
             mapController: _animatedController.mapController,
             options: MapOptions(
               onTap: (pos, point) {
-                if (_isEditing) {
+                if (_isEditing && !_isMoveMode) {
                   _addPoint(pos, point);
                 }
               },
-              initialCenter: _points.isNotEmpty ? _points.first : const LatLng(34.613, 73.140),
+              initialCenter: _points.isNotEmpty
+                  ? _points.first
+                  : const LatLng(34.613, 73.140),
               initialZoom: 17.0,
               interactionOptions: InteractionOptions(
-                flags: _draggedIndex != null 
-                  ? InteractiveFlag.none 
-                  : (InteractiveFlag.all & ~InteractiveFlag.rotate),
+                flags: _draggedIndex != null || _isMoveMode
+                    ? InteractiveFlag.none
+                    : (InteractiveFlag.all & ~InteractiveFlag.rotate),
               ),
             ),
             children: [
               TileLayer(
-                urlTemplate: _isSatellite 
-                  ? "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
-                  : "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                urlTemplate: _isSatellite
+                    ? "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
+                    : "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
                 userAgentPackageName: 'com.landsnap.app',
               ),
               if (_points.length >= 3)
@@ -216,10 +235,9 @@ class _EditPolygonScreenState extends State<EditPolygonScreen> with TickerProvid
                   polygons: [
                     Polygon(
                       points: _points,
-                      color: Colors.orange.withOpacity(0.4),
+                      color: Colors.orange.withValues(alpha: 0.4),
                       borderColor: Colors.orange,
                       borderStrokeWidth: 3,
-                      isFilled: true,
                     ),
                   ],
                 ),
@@ -235,23 +253,30 @@ class _EditPolygonScreenState extends State<EditPolygonScreen> with TickerProvid
                     width: 60,
                     height: 60,
                     child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
                       onTap: () => setState(() => _selectedIndex = idx),
                       onPanStart: (_) {
-                        if (isSelected) setState(() => _draggedIndex = idx);
+                        if (!_isMoveMode) return;
+                        setState(() {
+                          _draggedIndex = idx;
+                          _selectedIndex = idx;
+                        });
                       },
                       onPanUpdate: (details) {
-                        if (!isSelected) return; // Only allow dragging the selected point
-
-                        final renderBox = _mapKey.currentContext?.findRenderObject() as RenderBox?;
-                        if (renderBox != null) {
-                          final localPoint = renderBox.globalToLocal(details.globalPosition);
-                          final latLng = _animatedController.mapController.camera.pointToLatLng(
-                            Point(localPoint.dx, localPoint.dy)
-                          );
-                          setState(() {
-                            _points[idx] = latLng;
-                          });
-                        }
+                        if (!_isMoveMode) return;
+                        // Use CRS (Coordinate Reference System) for proper conversion
+                        final camera = _animatedController.mapController.camera;
+                        final crs = camera.crs;
+                        final zoom = camera.zoom;
+                        final currentPoint = crs.latLngToPoint(p, zoom);
+                        final newPoint = Point(
+                          currentPoint.x + details.delta.dx,
+                          currentPoint.y + details.delta.dy,
+                        );
+                        final newLatLng = crs.pointToLatLng(newPoint, zoom);
+                        setState(() {
+                          _points[idx] = newLatLng;
+                        });
                       },
                       onPanEnd: (_) => setState(() => _draggedIndex = null),
                       child: Container(
@@ -262,17 +287,24 @@ class _EditPolygonScreenState extends State<EditPolygonScreen> with TickerProvid
                             width: (isDragging || isSelected) ? 28 : 16,
                             height: (isDragging || isSelected) ? 28 : 16,
                             decoration: BoxDecoration(
-                              color: isSelected 
-                                ? (isDragging ? Colors.red : Colors.blue) 
-                                : Colors.white,
+                              color: isSelected
+                                  ? (isDragging ? Colors.red : Colors.blue)
+                                  : Colors.white,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: isSelected ? Colors.white : Colors.blueAccent, 
+                                color: isSelected
+                                    ? Colors.white
+                                    : Colors.blueAccent,
                                 width: isSelected ? 4 : 2,
                               ),
-                              boxShadow: (isDragging || isSelected) ? [
-                                BoxShadow(color: Colors.black38, blurRadius: 12, spreadRadius: 2)
-                              ] : [],
+                              boxShadow: (isDragging || isSelected)
+                                  ? [
+                                      BoxShadow(
+                                          color: Colors.black38,
+                                          blurRadius: 12,
+                                          spreadRadius: 2)
+                                    ]
+                                  : [],
                             ),
                           ),
                         ),
@@ -293,15 +325,22 @@ class _EditPolygonScreenState extends State<EditPolygonScreen> with TickerProvid
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(30),
-                boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4))],
+                boxShadow: const [
+                  BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 10,
+                      offset: Offset(0, 4))
+                ],
               ),
               child: TextField(
                 controller: _searchController,
                 decoration: InputDecoration(
                   hintText: "Search location (e.g., Haripur)",
-                  prefixIcon: const Icon(Icons.search, color: Color(0xFF6D4C41)),
+                  prefixIcon:
+                      const Icon(Icons.search, color: Color(0xFF6D4C41)),
                   border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.clear),
                     onPressed: () {
@@ -328,7 +367,8 @@ class _EditPolygonScreenState extends State<EditPolygonScreen> with TickerProvid
               right: 20,
               child: Card(
                 elevation: 4,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15)),
                 child: Container(
                   constraints: const BoxConstraints(maxHeight: 250),
                   child: ListView.builder(
@@ -338,7 +378,8 @@ class _EditPolygonScreenState extends State<EditPolygonScreen> with TickerProvid
                     itemBuilder: (context, index) {
                       final item = _suggestions[index];
                       return ListTile(
-                        leading: const Icon(Icons.location_on_outlined, color: Color(0xFF6D4C41)),
+                        leading: const Icon(Icons.location_on_outlined,
+                            color: Color(0xFF6D4C41)),
                         title: Text(
                           item['display_name'],
                           maxLines: 2,
@@ -349,7 +390,7 @@ class _EditPolygonScreenState extends State<EditPolygonScreen> with TickerProvid
                           final lat = double.parse(item['lat']);
                           final lon = double.parse(item['lon']);
                           final target = LatLng(lat, lon);
-                          
+
                           _animatedController.animateTo(dest: target, zoom: 16);
                           _searchController.clear();
                           if (mounted) {
@@ -373,11 +414,17 @@ class _EditPolygonScreenState extends State<EditPolygonScreen> with TickerProvid
               left: 20,
               right: 20,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
-                  boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 15, offset: Offset(0, -2))],
+                  boxShadow: const [
+                    BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 15,
+                        offset: Offset(0, -2))
+                  ],
                 ),
                 child: Row(
                   children: [
@@ -385,8 +432,13 @@ class _EditPolygonScreenState extends State<EditPolygonScreen> with TickerProvid
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text("Point #${_selectedIndex! + 1} Selected", style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF6D4C41))),
-                        const Text("Drag to move or delete", style: TextStyle(fontSize: 12, color: Colors.black54)),
+                        Text("Point #${_selectedIndex! + 1} Selected",
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF6D4C41))),
+                        const Text("Drag to move or delete",
+                            style:
+                                TextStyle(fontSize: 12, color: Colors.black54)),
                       ],
                     ),
                     const Spacer(),
@@ -397,19 +449,32 @@ class _EditPolygonScreenState extends State<EditPolygonScreen> with TickerProvid
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: SizedBox(
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed: () => setState(() => _selectedIndex = null),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF6D4C41),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                          child: const Text("Done"),
-                        ),
-                      ),
-                    ),
+  child: SizedBox(
+    height: 50,
+    child: ElevatedButton(
+      onPressed: () =>
+          setState(() => _selectedIndex = null),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFF6D4C41),
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+      ),
+      child: const FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          "Done",
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    ),
+  ),
+),
+
+
                   ],
                 ),
               ),
@@ -438,15 +503,21 @@ class _EditPolygonScreenState extends State<EditPolygonScreen> with TickerProvid
             ),
         ],
       ),
-      floatingActionButton: _selectedIndex != null ? null : FloatingActionButton.extended(
-        onPressed: _isSaving ? null : _save,
-        backgroundColor: const Color(0xFF6D4C41),
-        foregroundColor: Colors.white,
-        label: _isSaving 
-            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-            : const Text("Save Boundary"),
-        icon: const Icon(Icons.save),
-      ),
+      floatingActionButton: _selectedIndex != null
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: _isSaving ? null : _save,
+              backgroundColor: const Color(0xFF6D4C41),
+              foregroundColor: Colors.white,
+              label: _isSaving
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 2))
+                  : const Text("Save Boundary"),
+              icon: const Icon(Icons.save),
+            ),
     );
   }
 }

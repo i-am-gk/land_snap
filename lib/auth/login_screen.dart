@@ -1,3 +1,4 @@
+// ignore_for_file: library_private_types_in_public_api
 import 'package:flutter/material.dart';
 import 'signup_screen.dart';
 import 'auth_service.dart';
@@ -7,6 +8,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
@@ -19,13 +22,20 @@ class _LoginScreenState extends State<LoginScreen> {
   String _email = '', _password = '';
   bool _loading = false;
   String? _error;
+  bool _isPasswordVisible = false;
 
   void _submit() async {
-    if (mounted) setState(() => _error = null);
-    if (!_formKey.currentState!.validate()) return;
+    if (mounted) {
+      setState(() => _error = null);
+    }
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
     _formKey.currentState!.save();
 
-    if (mounted) setState(() => _loading = true);
+    if (mounted) {
+      setState(() => _loading = true);
+    }
 
     try {
       final UserCredential cred = await _authService.login(
@@ -82,11 +92,30 @@ class _LoginScreenState extends State<LoginScreen> {
         default:
           message = 'Login failed. Try again.';
       }
-      if (mounted) setState(() => _error = message);
+      if (mounted) {
+        setState(() => _error = message);
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(message), backgroundColor: Colors.red.shade700),
+        );
+      }
     } catch (e) {
       debugPrint('Non-FirebaseAuth error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Login failed. Please check your connection and try again.'),
+            backgroundColor: Colors.red.shade700,
+          ),
+        );
+      }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -115,25 +144,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // 🔹 Modern Logo Container
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: primaryColor.withOpacity(0.1),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: Image.asset(
-                      'assets/logo.png',
-                      height: 80,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
+             Image.asset(
+  'assets/logo.png',
+  height: 90,
+  fit: BoxFit.contain,
+),
                   const SizedBox(height: 32),
 
                   const Text(
@@ -170,13 +185,17 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: Colors.grey.shade300),
+                              borderSide:
+                                  BorderSide(color: Colors.grey.shade300),
                             ),
                           ),
                           keyboardType: TextInputType.emailAddress,
                           validator: (v) {
-                            if (v == null || v.trim().isEmpty) return 'Email is required';
-                            if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(v.trim())) return 'Enter a valid email';
+                            if (v == null || v.trim().isEmpty)
+                              return 'Email is required';
+                            if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
+                                .hasMatch(v.trim()))
+                              return 'Enter a valid email';
                             return null;
                           },
                           onSaved: (v) => _email = v ?? '',
@@ -188,18 +207,34 @@ class _LoginScreenState extends State<LoginScreen> {
                           decoration: InputDecoration(
                             labelText: 'Password',
                             prefixIcon: const Icon(Icons.lock_outline_rounded),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _isPasswordVisible
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                                color: Colors.grey,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _isPasswordVisible = !_isPasswordVisible;
+                                });
+                              },
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: Colors.grey.shade300),
+                              borderSide:
+                                  BorderSide(color: Colors.grey.shade300),
                             ),
                           ),
-                          obscureText: true,
+                          obscureText: !_isPasswordVisible,
                           validator: (v) {
-                            if (v == null || v.isEmpty) return 'Password is required';
-                            if (v.length < 6) return 'Password must be at least 6 characters';
+                            if (v == null || v.isEmpty)
+                              return 'Password is required';
+                            if (v.length < 6)
+                              return 'Password must be at least 6 characters';
                             return null;
                           },
                           onSaved: (v) => _password = v ?? '',
@@ -208,16 +243,21 @@ class _LoginScreenState extends State<LoginScreen> {
 
                         if (_error != null) ...[
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 10),
                             decoration: BoxDecoration(
                               color: Colors.red.shade50,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.error_outline, color: Colors.redAccent, size: 20),
+                                const Icon(Icons.error_outline,
+                                    color: Colors.redAccent, size: 20),
                                 const SizedBox(width: 10),
-                                Expanded(child: Text(_error!, style: const TextStyle(color: Colors.redAccent))),
+                                Expanded(
+                                    child: Text(_error!,
+                                        style: const TextStyle(
+                                            color: Colors.redAccent))),
                               ],
                             ),
                           ),
@@ -228,28 +268,37 @@ class _LoginScreenState extends State<LoginScreen> {
                           onPressed: _loading ? null : _submit,
                           style: ElevatedButton.styleFrom(
                             minimumSize: const Size(double.infinity, 60),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16)),
                             elevation: 0,
                           ),
                           child: _loading
                               ? const SizedBox(
                                   height: 24,
                                   width: 24,
-                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                      color: Colors.white, strokeWidth: 2),
                                 )
-                              : const Text('Sign In', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                              : const Text('Sign In',
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold)),
                         ),
                         const SizedBox(height: 24),
 
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text("Don't have an account?", style: TextStyle(color: Colors.black54)),
+                            const Text("Don't have an account?",
+                                style: TextStyle(color: Colors.black54)),
                             TextButton(
                               onPressed: () => Navigator.of(context).push(
-                                MaterialPageRoute(builder: (_) => SignupScreen()),
+                                MaterialPageRoute(
+                                    builder: (_) => SignupScreen()),
                               ),
-                              child: const Text('Sign Up', style: TextStyle(fontWeight: FontWeight.bold)),
+                              child: const Text('Sign Up',
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.bold)),
                             ),
                           ],
                         ),
