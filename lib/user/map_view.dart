@@ -1,10 +1,3 @@
-// MODIFIED FILE: lib/user/map_view.dart
-// ---------------------------------------------------------
-// MODULE: Dynamic Firebase Map View
-// PURPOSE: Renders land plots dynamically from Firestore.
-//          Handles real-time updates and interactive popups.
-// ---------------------------------------------------------
-
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';

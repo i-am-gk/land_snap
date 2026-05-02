@@ -125,22 +125,24 @@ class AdminDashboard extends StatelessWidget {
               ),
 
               const SizedBox(height: 16),
-              OutlinedButton.icon(
-                onPressed: () => _confirmMigration(context),
-                icon: const Icon(Icons.sync_alt),
-                label: const Text('Sync Local Data'),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 50),
-                  side: BorderSide(color: primaryColor),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              if (false) ...[
+                OutlinedButton.icon(
+                  onPressed: () => _confirmMigration(context),
+                  icon: const Icon(Icons.sync_alt),
+                  label: const Text('Sync Local Data'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 50),
+                    side: BorderSide(color: primaryColor),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                "Tip: Use 'Sync Local Data' to import geometry from map_data.json into Firestore.",
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: Colors.black54),
-              ),
+                const SizedBox(height: 20),
+                const Text(
+                  "Tip: Use 'Sync Local Data' to import geometry from map_data.json into Firestore.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14, color: Colors.black54),
+                ),
+              ],
             ],
           ),
         ),

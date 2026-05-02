@@ -1,9 +1,12 @@
+// ignore_for_file: library_private_types_in_public_api
 import 'package:flutter/material.dart';
 import 'auth_service.dart';
 import 'login_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class SignupScreen extends StatefulWidget {
+  const SignupScreen({super.key});
+
   @override
   _SignupScreenState createState() => _SignupScreenState();
 }
@@ -14,12 +17,17 @@ class _SignupScreenState extends State<SignupScreen> {
 
   String _fullName = '', _email = '', _phoneNumber = '', _password = '';
   bool _loading = false;
+  bool _isPasswordVisible = false;
 
   void _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
     _formKey.currentState!.save();
 
-    if (mounted) setState(() => _loading = true);
+    if (mounted) {
+      setState(() => _loading = true);
+    }
 
     try {
       await _authService.signup(
@@ -29,7 +37,9 @@ class _SignupScreenState extends State<SignupScreen> {
         password: _password,
       );
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Signup successful! Please login.')),
@@ -41,10 +51,44 @@ class _SignupScreenState extends State<SignupScreen> {
       );
     } on FirebaseAuthException catch (e) {
       debugPrint('FirebaseAuthException: ${e.code} - ${e.message}');
+      String message;
+      switch (e.code) {
+        case 'email-already-in-use':
+          message = 'This email is already registered.';
+          break;
+        case 'invalid-email':
+          message = 'Please enter a valid email address.';
+          break;
+        case 'weak-password':
+          message = 'Password is too weak. Use at least 6 characters.';
+          break;
+        case 'operation-not-allowed':
+          message = 'Signup is currently disabled. Please try again later.';
+          break;
+        default:
+          message = 'Signup failed. Please try again.';
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(message), backgroundColor: Colors.red.shade700),
+        );
+      }
     } catch (e) {
       debugPrint('Non-FirebaseAuth error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Signup failed. Please check your connection and try again.'),
+            backgroundColor: Colors.red.shade700,
+          ),
+        );
+      }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -55,7 +99,8 @@ class _SignupScreenState extends State<SignupScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Create Account', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Create Account',
+            style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         elevation: 0,
       ),
@@ -77,25 +122,11 @@ class _SignupScreenState extends State<SignupScreen> {
               child: Column(
                 children: [
                   // 🔹 Modern Logo Container
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: primaryColor.withOpacity(0.1),
-                          blurRadius: 15,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: Image.asset(
-                      'assets/logo.png',
-                      height: 70,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
+                 Image.asset(
+  'assets/logo.png',
+  height: 90,
+  fit: BoxFit.contain,
+),
                   const SizedBox(height: 24),
 
                   const Text(
@@ -121,8 +152,12 @@ class _SignupScreenState extends State<SignupScreen> {
                           label: 'Full Name',
                           icon: Icons.person_outline_rounded,
                           validator: (v) {
-                            if (v == null || v.trim().isEmpty) return 'Name is required';
-                            if (!RegExp(r'^[a-zA-Z ]+$').hasMatch(v.trim())) return 'Only letters allowed';
+                            if (v == null || v.trim().isEmpty) {
+                              return 'Name is required';
+                            }
+                            if (!RegExp(r'^[a-zA-Z ]+$').hasMatch(v.trim())) {
+                              return 'Only letters allowed';
+                            }
                             return null;
                           },
                           onSaved: (v) => _fullName = v ?? '',
@@ -133,8 +168,13 @@ class _SignupScreenState extends State<SignupScreen> {
                           icon: Icons.email_outlined,
                           keyboardType: TextInputType.emailAddress,
                           validator: (v) {
-                            if (v == null || v.trim().isEmpty) return 'Email is required';
-                            if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(v.trim())) return 'Invalid email';
+                            if (v == null || v.trim().isEmpty) {
+                              return 'Email is required';
+                            }
+                            if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
+                                .hasMatch(v.trim())) {
+                              return 'Invalid email';
+                            }
                             return null;
                           },
                           onSaved: (v) => _email = v ?? '',
@@ -145,8 +185,12 @@ class _SignupScreenState extends State<SignupScreen> {
                           icon: Icons.phone_outlined,
                           keyboardType: TextInputType.phone,
                           validator: (v) {
-                            if (v == null || v.trim().isEmpty) return 'Phone required';
-                            if (!RegExp(r'^\d{11}$').hasMatch(v.trim())) return 'Must be 11 digits';
+                            if (v == null || v.trim().isEmpty) {
+                              return 'Phone required';
+                            }
+                            if (!RegExp(r'^\d{11}$').hasMatch(v.trim())) {
+                              return 'Must be 11 digits';
+                            }
                             return null;
                           },
                           onSaved: (v) => _phoneNumber = v ?? '',
@@ -155,36 +199,57 @@ class _SignupScreenState extends State<SignupScreen> {
                         _buildTextField(
                           label: 'Password',
                           icon: Icons.lock_outline_rounded,
-                          obscureText: true,
+                          obscureText: !_isPasswordVisible,
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _isPasswordVisible
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
+                              color: Colors.grey,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isPasswordVisible = !_isPasswordVisible;
+                              });
+                            },
+                          ),
                           validator: (v) {
-                            if (v == null || v.isEmpty) return 'Password required';
-                            if (v.length < 6) return 'Too short';
+                            if (v == null || v.isEmpty) {
+                              return 'Password required';
+                            }
+                            if (v.length < 6) {
+                              return 'Too short';
+                            }
                             return null;
                           },
                           onSaved: (v) => _password = v ?? '',
                         ),
                         const SizedBox(height: 32),
-
                         ElevatedButton(
                           onPressed: _loading ? null : _submit,
                           style: ElevatedButton.styleFrom(
                             minimumSize: const Size(double.infinity, 60),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16)),
                             elevation: 0,
                           ),
                           child: _loading
                               ? const SizedBox(
                                   height: 24,
                                   width: 24,
-                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                      color: Colors.white, strokeWidth: 2),
                                 )
-                              : const Text('Create Account', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                              : const Text('Create Account',
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold)),
                         ),
                         const SizedBox(height: 20),
-
                         TextButton(
                           onPressed: () => Navigator.of(context).pop(),
-                          child: const Text('Already have an account? Log In', style: TextStyle(fontWeight: FontWeight.bold)),
+                          child: const Text('Already have an account? Log In',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
                         ),
                       ],
                     ),
@@ -205,17 +270,20 @@ class _SignupScreenState extends State<SignupScreen> {
     required void Function(String?) onSaved,
     bool obscureText = false,
     TextInputType keyboardType = TextInputType.text,
+    Widget? suffixIcon,
   }) {
     return TextFormField(
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon, size: 22),
+        suffixIcon: suffixIcon,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(color: Colors.grey.shade300),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       ),
       obscureText: obscureText,
       keyboardType: keyboardType,
