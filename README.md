@@ -127,5 +127,5 @@ This application was developed as part of a Final Year Project to demonstrate th
 ---
 
 ## Author
-
-GK
+Shahabullah Shah
+Shujahat Khan
