@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../main.dart';
+import '../widgets/accessible_text_wrapper.dart';
 import 'map_view.dart';
 
 class SearchByKhasra extends StatefulWidget {
@@ -70,6 +72,13 @@ class _SearchByKhasraState extends State<SearchByKhasra> {
 
   @override
   Widget build(BuildContext context) {
+    return AccessibleTextWrapper(
+      provider: appFontSizeProvider,
+      child: _buildScaffold(context),
+    );
+  }
+
+  Widget _buildScaffold(BuildContext context) {
     final primaryColor = Theme.of(context).primaryColor;
 
     return Scaffold(
@@ -150,17 +159,17 @@ class _SearchByKhasraState extends State<SearchByKhasra> {
                 padding: const EdgeInsets.all(24),
                 child: Column(
                   children: [
-                    if (_loading) 
-                      const Padding(
-                        padding: EdgeInsets.only(top: 40),
-                        child: CircularProgressIndicator(),
-                      ),
-
-                    if (!_loading && _result != null)
-                      _buildResultCard(primaryColor),
-
-                    if (!_loading && _result == null && _hasSearched)
-                      _buildEmptyState(),
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      child: _loading 
+                          ? const Padding(
+                              padding: EdgeInsets.only(top: 40),
+                              child: CircularProgressIndicator(),
+                            )
+                          : (_result != null
+                              ? _buildResultCard(primaryColor)
+                              : (_hasSearched ? _buildEmptyState() : const SizedBox.shrink())),
+                    ),
                   ],
                 ),
               ),
@@ -245,22 +254,32 @@ class _SearchByKhasraState extends State<SearchByKhasra> {
   }
 
   Widget _buildEmptyState() {
-    return Column(
-      children: [
-        const SizedBox(height: 40),
-        Icon(Icons.search_off_rounded, size: 80, color: Colors.grey.shade300),
-        const SizedBox(height: 16),
-        const Text(
-          'No Record Found',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black54),
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          'Double check the Khasra number and try again.',
-          textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.grey),
-        ),
-      ],
+    return Container(
+      margin: const EdgeInsets.only(top: 24),
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 10)),
+        ],
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.search_off_rounded, size: 80, color: Colors.grey.shade300),
+          const SizedBox(height: 16),
+          const Text(
+            'No Record Found',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Double check the Khasra number and try again.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey, fontSize: 14),
+          ),
+        ],
+      ),
     );
   }
 

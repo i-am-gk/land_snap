@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
+import '../main.dart';
+import '../widgets/accessible_text_wrapper.dart';
 
 class TermsScreen extends StatelessWidget {
   const TermsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    return AccessibleTextWrapper(
+      provider: appFontSizeProvider,
+      child: _buildScaffold(context),
+    );
+  }
+
+  Widget _buildScaffold(BuildContext context) {
     final primaryColor = Theme.of(context).primaryColor;
 
     return Scaffold(
@@ -20,17 +29,7 @@ class TermsScreen extends StatelessWidget {
           child: Column(
             children: [
               // Logo at top
-              Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                color: Colors.white,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Image.asset('assets/logo.png', height: 80, width: 80),
-                ),
-              ),
+              Image.asset('assets/logo.png', height: 100),
               const SizedBox(height: 20),
 
               // Terms content

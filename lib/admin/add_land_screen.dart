@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/land_repository.dart';
 
 class AddLandScreen extends StatefulWidget {
@@ -29,8 +30,40 @@ class _AddLandScreenState extends State<AddLandScreen> {
     if (mounted) setState(() => _loading = true);
 
     try {
+      final khasraId = _khasraNumber.trim();
+      final docSnapshot = await FirebaseFirestore.instance.collection('lands').doc(khasraId).get();
+      
+      if (docSnapshot.exists) {
+        if (!mounted) return;
+        final shouldUpdate = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Duplicate Khasra Detected'),
+            content: const Text('A land record with this Khasra Number already exists.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Update Existing Record'),
+              ),
+            ],
+          ),
+        );
+
+        if (shouldUpdate != true) {
+          if (mounted) setState(() => _loading = false);
+          return;
+        }
+      }
+
+      if (!mounted) return;
+      if (mounted) setState(() => _loading = true);
+
       await _landRepo.saveLandRecord(
-        khasraId: _khasraNumber.trim(),
+        khasraId: khasraId,
         metadata: {
           'ownerName': _ownerName.trim(),
           'areaDetail': _areaDetail.trim(),

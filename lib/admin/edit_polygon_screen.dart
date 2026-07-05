@@ -8,6 +8,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 import '../services/land_repository.dart';
 import '../models/map_polygon_feature.dart';
+import '../services/geometry_preview_split_service.dart';
 
 class EditPolygonScreen extends StatefulWidget {
   final MapPolygonFeature feature;
@@ -33,6 +34,9 @@ class _EditPolygonScreenState extends State<EditPolygonScreen>
   int? _selectedIndex;
   List<dynamic> _suggestions = [];
   Timer? _debounce;
+  
+  // Temporary Subdivision Preview State
+  List<List<LatLng>> _previewPolygons = [];
 
   @override
   void initState() {
@@ -127,7 +131,7 @@ class _EditPolygonScreenState extends State<EditPolygonScreen>
         final lon = double.parse(data[0]['lon']);
         final target = LatLng(lat, lon);
 
-        _animatedController.animateTo(dest: target, zoom: 16);
+        _animatedController.mapController.move(target, 16);
         _searchController.clear();
         FocusScope.of(context).unfocus();
       } else {
@@ -165,6 +169,89 @@ class _EditPolygonScreenState extends State<EditPolygonScreen>
     }
   }
 
+  void _showSubdivisionPreviewBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Subdivision Preview",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF6D4C41),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                "Split Into",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              ListTile(
+                title: const Text("2 Parts"),
+                leading: const Icon(Icons.pie_chart_outline),
+                onTap: () {
+                  Navigator.pop(context);
+                  _generatePreview(2);
+                },
+              ),
+              ListTile(
+                title: const Text("3 Parts"),
+                leading: const Icon(Icons.pie_chart_outline),
+                onTap: () {
+                  Navigator.pop(context);
+                  _generatePreview(3);
+                },
+              ),
+              ListTile(
+                title: const Text("4 Parts"),
+                leading: const Icon(Icons.pie_chart_outline),
+                onTap: () {
+                  Navigator.pop(context);
+                  _generatePreview(4);
+                },
+              ),
+              const Divider(),
+              if (_previewPolygons.isNotEmpty)
+                Center(
+                  child: TextButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      setState(() {
+                        _previewPolygons.clear();
+                      });
+                    },
+                    icon: const Icon(Icons.clear, color: Colors.red),
+                    label: const Text("Clear Preview", style: TextStyle(color: Colors.red)),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _generatePreview(int parts) {
+    if (_points.length < 3) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Polygon must have at least 3 points to preview.')),
+      );
+      return;
+    }
+    setState(() {
+      _previewPolygons = GeometryPreviewSplitService.generatePreviewSplits(_points, parts);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -173,6 +260,11 @@ class _EditPolygonScreenState extends State<EditPolygonScreen>
         backgroundColor: const Color(0xFF6D4C41),
         foregroundColor: Colors.white,
         actions: [
+          IconButton(
+            tooltip: "Preview Split",
+            icon: const Icon(Icons.grid_on),
+            onPressed: _showSubdivisionPreviewBottomSheet,
+          ),
           IconButton(
             tooltip: "Toggle View",
             icon: Icon(_isSatellite ? Icons.map : Icons.satellite_alt),
@@ -217,6 +309,12 @@ class _EditPolygonScreenState extends State<EditPolygonScreen>
                   ? _points.first
                   : const LatLng(34.613, 73.140),
               initialZoom: 17.0,
+              cameraConstraint: CameraConstraint.contain(
+                bounds: LatLngBounds(
+                  const LatLng(-90, -180),
+                  const LatLng(90, 180),
+                ),
+              ),
               interactionOptions: InteractionOptions(
                 flags: _draggedIndex != null || _isMoveMode
                     ? InteractiveFlag.none
@@ -230,6 +328,44 @@ class _EditPolygonScreenState extends State<EditPolygonScreen>
                     : "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
                 userAgentPackageName: 'com.landsnap.app',
               ),
+              // Reference Polygons Layer
+              StreamBuilder<List<MapPolygonFeature>>(
+                stream: _landRepo.watchAllPlots(),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
+
+                  final palette = [
+                    Colors.red,
+                    Colors.blue,
+                    Colors.green,
+                    Colors.purple,
+                    Colors.teal,
+                    Colors.amber,
+                  ];
+
+                  final referenceFeatures = snapshot.data!
+                      .where((f) => f.khasraId != widget.feature.khasraId && f.points.length >= 3)
+                      .toList();
+
+                  final referencePolygons = referenceFeatures.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final f = entry.value;
+                    final baseColor = palette[index % palette.length];
+
+                    return Polygon(
+                      points: f.points,
+                      color: baseColor.withOpacity(0.15),
+                      borderColor: baseColor.withOpacity(0.8),
+                      borderStrokeWidth: 2,
+                    );
+                  }).toList();
+
+                  return PolygonLayer(polygons: referencePolygons);
+                },
+              ),
+              // Active Polygon Layer
               if (_points.length >= 3)
                 PolygonLayer(
                   polygons: [
@@ -240,6 +376,110 @@ class _EditPolygonScreenState extends State<EditPolygonScreen>
                       borderStrokeWidth: 3,
                     ),
                   ],
+                ),
+              // Subdivision Preview Polygon Layer
+              if (_previewPolygons.isNotEmpty)
+                PolygonLayer(
+                  polygons: _previewPolygons.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final polyPoints = entry.value;
+                    final palette = [
+                      Colors.purple,
+                      Colors.cyan,
+                      Colors.pink,
+                      Colors.lime,
+                    ];
+                    final color = palette[index % palette.length];
+                    return Polygon(
+                      points: polyPoints,
+                      color: color.withOpacity(0.4),
+                      borderColor: color,
+                      borderStrokeWidth: 4,
+                    );
+                  }).toList(),
+                ),
+              // Subdivision Preview Area Labels
+              if (_previewPolygons.isNotEmpty)
+                MarkerLayer(
+                  markers: _previewPolygons.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final polyPoints = entry.value;
+                    final centroid = GeometryPreviewSplitService.calculateCentroid(polyPoints);
+                    final areaMeters = GeometryPreviewSplitService.calculateAreaInSquareMeters(polyPoints);
+                    final areaFeet = areaMeters * 10.7639;
+                    
+                    return Marker(
+                      point: centroid,
+                      width: 100,
+                      height: 50,
+                      alignment: Alignment.center,
+                      child: IgnorePointer(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.black87,
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: Colors.white, width: 0.5),
+                          ),
+                          child: Center(
+                            child: Text(
+                              'Part ${index + 1}\n${areaMeters.toStringAsFixed(1)} m²\n${areaFeet.toStringAsFixed(1)} ft²',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              // Live distance labels between consecutive points
+              if (_points.length >= 2)
+                MarkerLayer(
+                  markers: List.generate(
+                    _points.length >= 3 ? _points.length : _points.length - 1,
+                    (index) {
+                      final p1 = _points[index];
+                      final p2 = _points[(index + 1) % _points.length];
+                      final midLat = (p1.latitude + p2.latitude) / 2;
+                      final midLng = (p1.longitude + p2.longitude) / 2;
+                      final distMeters = const Distance().distance(p1, p2);
+                      final distFt = distMeters * 3.28084;
+                      final dist = distMeters.toStringAsFixed(1);
+                      final distFeet = distFt.toStringAsFixed(1);
+
+                      return Marker(
+                        point: LatLng(midLat, midLng),
+                        width: 100,
+                        height: 24,
+                        alignment: Alignment.center,
+                        child: IgnorePointer(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.black87,
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: Colors.white, width: 0.5),
+                            ),
+                            child: Center(
+                              child: Text(
+                                '$dist m ($distFeet ft)',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               MarkerLayer(
                 markers: _points.asMap().entries.map((entry) {
@@ -391,7 +631,7 @@ class _EditPolygonScreenState extends State<EditPolygonScreen>
                           final lon = double.parse(item['lon']);
                           final target = LatLng(lat, lon);
 
-                          _animatedController.animateTo(dest: target, zoom: 16);
+                          _animatedController.mapController.move(target, 16);
                           _searchController.clear();
                           if (mounted) {
                             setState(() {
@@ -480,44 +720,65 @@ class _EditPolygonScreenState extends State<EditPolygonScreen>
               ),
             ),
 
-          // 🔹 Help Tip (only shown if nothing selected)
+          // 🔹 Bottom Control Stack (Help Tip + Save Button)
           if (_selectedIndex == null)
             Positioned(
               bottom: 30,
               left: 20,
               right: 20,
-              child: IgnorePointer(
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.black54,
-                    borderRadius: BorderRadius.circular(12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IgnorePointer(
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.black87,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            "Tap a point to select. Drag to adjust.\nDouble-tap map to add points.",
+                            style: TextStyle(color: Colors.white, fontSize: 13),
+                            textAlign: TextAlign.center,
+                          ),
+                          if (_points.length >= 3)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: Text(
+                                "Perimeter: ${(List.generate(_points.length, (i) => const Distance().distance(_points[i], _points[(i + 1) % _points.length])).fold<double>(0.0, (a, b) => a + b)).toStringAsFixed(1)} m (${((List.generate(_points.length, (i) => const Distance().distance(_points[i], _points[(i + 1) % _points.length])).fold<double>(0.0, (a, b) => a + b)) * 3.28084).toStringAsFixed(1)} ft)",
+                                style: const TextStyle(
+                                  color: Colors.orangeAccent,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
-                  child: const Text(
-                    "Tap a point to select. Drag to adjust.\nDouble-tap map to add points.",
-                    style: TextStyle(color: Colors.white, fontSize: 13),
-                    textAlign: TextAlign.center,
+                  const SizedBox(height: 16),
+                  FloatingActionButton.extended(
+                    onPressed: _isSaving ? null : _save,
+                    backgroundColor: const Color(0xFF6D4C41),
+                    foregroundColor: Colors.white,
+                    label: _isSaving
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                                color: Colors.white, strokeWidth: 2))
+                        : const Text("Save Boundary"),
+                    icon: const Icon(Icons.save),
                   ),
-                ),
+                ],
               ),
             ),
         ],
       ),
-      floatingActionButton: _selectedIndex != null
-          ? null
-          : FloatingActionButton.extended(
-              onPressed: _isSaving ? null : _save,
-              backgroundColor: const Color(0xFF6D4C41),
-              foregroundColor: Colors.white,
-              label: _isSaving
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                          color: Colors.white, strokeWidth: 2))
-                  : const Text("Save Boundary"),
-              icon: const Icon(Icons.save),
-            ),
     );
   }
 }

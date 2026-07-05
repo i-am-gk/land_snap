@@ -46,7 +46,21 @@ class _ViewLandScreenState extends State<ViewLandScreen> {
           }
 
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(child: Text('No land records found.'));
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.landscape_rounded, size: 80, color: Colors.grey[350]),
+                    const SizedBox(height: 16),
+                    const Text('No Land Records Found', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87)),
+                    const SizedBox(height: 8),
+                    const Text('Add land records from the Add Land screen to see them here.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, fontSize: 14)),
+                  ],
+                ),
+              ),
+            );
           }
 
           final landDocs = snapshot.data!.docs;
@@ -61,9 +75,10 @@ class _ViewLandScreenState extends State<ViewLandScreen> {
                              MapPolygonFeature(khasraId: doc.id, points: []);
 
               return Card(
-                margin: const EdgeInsets.only(bottom: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                elevation: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                elevation: 2,
+                shadowColor: Colors.black12,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
