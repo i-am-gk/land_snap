@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -34,5 +35,11 @@ class AuthService {
     return _auth.signInWithEmailAndPassword(email: email, password: password);
   }
 
-  Future<void> signout() => _auth.signOut();
+  Future<void> signout() async {
+    // Clear cached role so the login screen appears correctly on next launch.
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('user_role');
+    await _auth.signOut();
+  }
 }
+

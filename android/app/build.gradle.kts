@@ -9,7 +9,7 @@ plugins {
 
 android {
     namespace = "com.example.landsnap_demo"
-    compileSdk = 34       // make sure it's 34 (safe for Firebase)
+    compileSdk = 35       // Required for shared_preferences_android
     ndkVersion = "27.0.12077973"   // REQUIRED FIX
 
     compileOptions {
@@ -27,7 +27,7 @@ android {
         // 🔥 REQUIRED FIX — Firebase needs minSdk 23 or higher
         minSdk = 23
 
-        targetSdk = 34
+        targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }

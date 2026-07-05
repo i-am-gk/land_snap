@@ -2,7 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../main.dart';
 import '../auth/auth_service.dart';
+import '../widgets/accessible_text_wrapper.dart';
 import 'search_by_khasra.dart';
 import 'map_view.dart';
 import 'settings.dart';
@@ -30,6 +32,13 @@ class _UserDashboardState extends State<UserDashboard> {
 
   @override
   Widget build(BuildContext context) {
+    return AccessibleTextWrapper(
+      provider: appFontSizeProvider,
+      child: _buildScaffold(context),
+    );
+  }
+
+  Widget _buildScaffold(BuildContext context) {
     final primaryColor = Theme.of(context).primaryColor;
 
     return Scaffold(
@@ -74,17 +83,9 @@ class _UserDashboardState extends State<UserDashboard> {
                 ),
                 child: Column(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Image.asset(
-                        'assets/logo.png',
-                        width: 60,
-                        height: 60,
-                      ),
+                    Image.asset(
+                      'assets/logo.png',
+                      height: 100,
                     ),
                     const SizedBox(height: 20),
                     const Text(

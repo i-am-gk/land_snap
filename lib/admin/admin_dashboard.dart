@@ -24,126 +24,172 @@ class AdminDashboard extends StatelessWidget {
     final primaryColor = Theme.of(context).primaryColor;
 
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: const Text('LandSnap — Admin Dashboard'),
         backgroundColor: primaryColor,
+        elevation: 0,
         actions: [
           IconButton(
             onPressed: () => _logout(context),
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout_rounded),
             tooltip: 'Logout',
           ),
         ],
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              // 🔹 Logo + Welcome Card
-              Container(
-                padding: const EdgeInsets.all(20),
-                margin: const EdgeInsets.only(bottom: 30),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [primaryColor.withOpacity(0.8), primaryColor],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 10,
-                      offset: Offset(0, 6),
+        child: TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0.0, end: 1.0),
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeOutCubic,
+          builder: (context, value, child) {
+            return Opacity(
+              opacity: value,
+              child: Transform.translate(
+                offset: Offset(0, 20 * (1 - value)),
+                child: child,
+              ),
+            );
+          },
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: [
+                // 🔹 Premium Welcome Card
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+                  margin: const EdgeInsets.only(bottom: 32),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [primaryColor, primaryColor.withOpacity(0.85)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Image.asset(
-                      'assets/logo.png', // logo same as login/signup
-                      height: 80,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Welcome Admin',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: primaryColor.withOpacity(0.3),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      "Manage your land records efficiently and securely with LandSnap.",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 16, color: Colors.white70),
-                    ),
-                  ],
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Image.asset(
+                        'assets/logo.png', // logo same as login/signup
+                        height: 100,
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Welcome, Admin',
+                        style: TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        "Manage your land records efficiently\nand securely with LandSnap.",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 15, color: Colors.white70, height: 1.4),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
 
-              // 🔹 Action Buttons with improved styling
-              ElevatedButton.icon(
-                onPressed:
-                    () => _navigateTo(context, AddLandScreen(user: user)),
-                icon: const Icon(Icons.add, size: 24),
-                label: const Text('Add Land'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryColor,
-                  minimumSize: const Size(double.infinity, 55),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                // 🔹 Modern Action Buttons
+                Container(
+                  decoration: BoxDecoration(
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 10))],
                   ),
-                  elevation: 4,
-                  textStyle: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed:
-                    () => _navigateTo(context, ViewLandScreen(user: user)),
-                icon: const Icon(Icons.list, size: 24),
-                label: const Text('View Land'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryColor,
-                  minimumSize: const Size(double.infinity, 55),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  elevation: 4,
-                  textStyle: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
+                  child: ElevatedButton(
+                    onPressed: () => _navigateTo(context, AddLandScreen(user: user)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: primaryColor,
+                      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      elevation: 0,
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(color: primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                          child: Icon(Icons.add_location_alt_rounded, size: 28, color: primaryColor),
+                        ),
+                        const SizedBox(width: 20),
+                        const Expanded(
+                          child: Text(
+                            'Add New Land',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                          ),
+                        ),
+                        Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400),
+                      ],
+                    ),
                   ),
                 ),
-              ),
+                const SizedBox(height: 16),
+                
+                Container(
+                  decoration: BoxDecoration(
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 10))],
+                  ),
+                  child: ElevatedButton(
+                    onPressed: () => _navigateTo(context, ViewLandScreen(user: user)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: primaryColor,
+                      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      elevation: 0,
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(color: primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                          child: Icon(Icons.list_alt_rounded, size: 28, color: primaryColor),
+                        ),
+                        const SizedBox(width: 20),
+                        const Expanded(
+                          child: Text(
+                            'View Land Records',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                          ),
+                        ),
+                        Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400),
+                      ],
+                    ),
+                  ),
+                ),
 
-              const SizedBox(height: 16),
-              if (false) ...[
-                OutlinedButton.icon(
-                  onPressed: () => _confirmMigration(context),
-                  icon: const Icon(Icons.sync_alt),
-                  label: const Text('Sync Local Data'),
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 50),
-                    side: BorderSide(color: primaryColor),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                const SizedBox(height: 16),
+                if (false) ...[
+                  OutlinedButton.icon(
+                    onPressed: () => _confirmMigration(context),
+                    icon: const Icon(Icons.sync_alt),
+                    label: const Text('Sync Local Data'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 50),
+                      side: BorderSide(color: primaryColor),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  "Tip: Use 'Sync Local Data' to import geometry from map_data.json into Firestore.",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 14, color: Colors.black54),
-                ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    "Tip: Use 'Sync Local Data' to import geometry from map_data.json into Firestore.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 14, color: Colors.black54),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

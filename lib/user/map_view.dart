@@ -231,6 +231,12 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                   onTap: (tapPos, point) => _handleMapTap(tapPos, point, features),
                   initialCenter: const LatLng(34.613, 73.140),
                   initialZoom: 16.0,
+                  cameraConstraint: CameraConstraint.contain(
+                    bounds: LatLngBounds(
+                      const LatLng(-90, -180),
+                      const LatLng(90, 180),
+                    ),
+                  ),
                 ),
                 children: [
                   TileLayer(
@@ -262,8 +268,8 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                       final isSelected = _selectedKhasraId == f.khasraId;
                       return Marker(
                         point: f.centroid,
-                        width: isSelected ? 220 : 40,
-                        height: isSelected ? 220 : 40,
+                        width: 40,
+                        height: 40,
                         alignment: Alignment.topCenter,
                         child: GestureDetector(
                           onTap: () {
@@ -273,12 +279,6 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              if (isSelected)
-                                Flexible(
-                                  child: SingleChildScrollView(
-                                    child: _buildPopupCard(f),
-                                  ),
-                                ),
                               Icon(
                                 Icons.location_on,
                                 color: isSelected ? Colors.orange : Colors.red,
@@ -293,8 +293,7 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                 ],
               ),
               
-              if (features.isNotEmpty)
-                _buildLegend(),
+              _buildLegend(features.isNotEmpty),
             ],
           );
         },
@@ -360,26 +359,30 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildLegend() {
+  Widget _buildLegend(bool isVisible) {
     return Positioned(
       bottom: 24,
       right: 24,
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.9),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 4))],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text("Map Legend", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-            const SizedBox(height: 8),
-            _buildLegendItem(const Color(0xFF6D4C41), "Land Boundary"),
-            _buildLegendItem(Colors.orange, "Selected Area"),
-          ],
+      child: AnimatedOpacity(
+        opacity: isVisible ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 300),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.9),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 4))],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text("Map Legend", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              const SizedBox(height: 8),
+              _buildLegendItem(const Color(0xFF6D4C41), "Land Boundary"),
+              _buildLegendItem(Colors.orange, "Selected Area"),
+            ],
+          ),
         ),
       ),
     );

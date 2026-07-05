@@ -123,7 +123,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 children: [
                   // 🔹 Modern Logo Container
                  Image.asset(
-  'assets/logo.png',
+  'assets/logo6.png',
   height: 90,
   fit: BoxFit.contain,
 ),

@@ -2,13 +2,18 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'auth/auth_gate.dart';
+import 'services/font_size_provider.dart';
+
+// Single app-wide font scale instance — only used by user-side screens.
+final FontSizeProvider appFontSizeProvider = FontSizeProvider();
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(LandSnapApp());
+  runApp(const LandSnapApp());
 }
 
 class LandSnapApp extends StatelessWidget {
+  const LandSnapApp({super.key});
   @override
   Widget build(BuildContext context) {
     final Color primaryBrown = Color(0xFF6D4C41);

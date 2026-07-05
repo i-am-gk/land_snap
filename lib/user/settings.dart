@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../main.dart';
 import '../auth/auth_service.dart';
+import '../widgets/accessible_text_wrapper.dart';
 import 'about_screen.dart';
 import 'terms_screen.dart';
 import 'font_size_preview.dart';
@@ -38,6 +40,13 @@ class Settings extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return AccessibleTextWrapper(
+      provider: appFontSizeProvider,
+      child: _buildScaffold(context),
+    );
+  }
+
+  Widget _buildScaffold(BuildContext context) {
     final primaryColor = Theme.of(context).primaryColor;
     final userName = user.displayName ?? "Verified User";
 
@@ -69,14 +78,7 @@ class Settings extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: primaryColor.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Image.asset('assets/logo.png', height: 40, width: 40),
-                  ),
+                  Image.asset('assets/logo.png', height: 60),
                   const SizedBox(width: 20),
                   Expanded(
                     child: Column(

@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
+import '../main.dart';
+import '../widgets/accessible_text_wrapper.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    return AccessibleTextWrapper(
+      provider: appFontSizeProvider,
+      child: _buildScaffold(context),
+    );
+  }
+
+  Widget _buildScaffold(BuildContext context) {
     final primaryColor = Theme.of(context).primaryColor;
 
     return Scaffold(
@@ -36,7 +45,7 @@ class AboutScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    Image.asset('assets/logo.png', height: 100, width: 100),
+                    Image.asset('assets/logo.png', height: 120),
                     const SizedBox(height: 20),
                     const Text(
                       "LandSnap",
@@ -122,8 +131,8 @@ class AboutScreen extends StatelessWidget {
                     _buildFeatureItem(Icons.search_rounded, "Instant Khasra Lookup"),
                     _buildFeatureItem(Icons.map_rounded, "Interactive GIS Visualization"),
                     _buildFeatureItem(Icons.security_rounded, "Secure Role-Based Access"),
-                    _buildFeatureItem(Icons.cloud_sync_rounded, "Real-time Firestore Integration"),
-                    _buildFeatureItem(Icons.offline_bolt_rounded, "Offline-First Reliability"),
+                    _buildFeatureItem(Icons.cloud_sync_rounded, "Real-time Data Synchronization"),
+                    _buildFeatureItem(Icons.offline_bolt_rounded, "Fast and Reliable "),
                   ],
                 ),
               ),
